@@ -1,11 +1,10 @@
-import { IArticleResponseInterface } from './../article/types/articleResponse.interface';
+import { BackValidationPipe } from '@app/shared/pipes/backValidation.pipe';
 import { IUserResponse } from './../../dist/user/types/userResponse.interface.d';
 import {
   Body,
   Controller,
   Get,
   HttpCode,
-  Param,
   Post,
   Put,
   UseGuards,
@@ -23,7 +22,7 @@ import { UpdateUserDto } from './dto/updateUser.dto';
 @Controller()
 export class UserController {
   constructor(private readonly userService: UserService) {}
-  @UsePipes(new ValidationPipe())
+  @UsePipes(new BackValidationPipe())
   @Post('users')
   async createUser(
     @Body('user') createUserDto: CreateUserDto,
@@ -32,7 +31,7 @@ export class UserController {
     return this.userService.buildUserResponse(user);
   }
 
-  @UsePipes(new ValidationPipe())
+  @UsePipes(new BackValidationPipe())
   @HttpCode(200)
   @Post('users/login')
   async login(@Body() loginUserDto: LoginUserDto): Promise<IUserResponse> {

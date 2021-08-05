@@ -1,21 +1,11 @@
 import { UpdateUserDto } from './dto/updateUser.dto';
 import { LoginUserDto } from './dto/loginUser.dto';
-import {
-  EMAIL_IS_EXIST,
-  NAME_IS_EXIST,
-  USER_NOT_FOUND,
-  INCORRECT_PASSWORD,
-} from './user.constants';
+import { EMAIL_IS_EXIST, NAME_IS_EXIST } from './user.constants';
 import { IUserResponse } from './types/userResponse.interface';
 import { JWT_SECRET } from './../config';
 import { UserEntity } from './user.entity';
 import { CreateUserDto } from './dto/createUser.dto';
-import {
-  HttpException,
-  HttpStatus,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { sign } from 'jsonwebtoken';
@@ -29,6 +19,9 @@ export class UserService {
   ) {}
 
   async createUser(dto: CreateUserDto): Promise<UserEntity> {
+    const errorResponse = {
+      errors: {},
+    };
     const userByEmail = await this.userRepository.findOne({
       email: dto.email,
     });
@@ -37,11 +30,15 @@ export class UserService {
     });
 
     if (userByEmail) {
-      throw new HttpException(EMAIL_IS_EXIST, HttpStatus.UNPROCESSABLE_ENTITY);
+      errorResponse.errors['email'] = EMAIL_IS_EXIST;
     }
 
     if (userByName) {
-      throw new HttpException(NAME_IS_EXIST, HttpStatus.UNPROCESSABLE_ENTITY);
+      errorResponse.errors['username'] = NAME_IS_EXIST;
+    }
+
+    if (userByEmail || userByName) {
+      throw new HttpException(errorResponse, HttpStatus.UNPROCESSABLE_ENTITY);
     }
 
     const newUser = new UserEntity();
@@ -50,6 +47,12 @@ export class UserService {
   }
 
   async loginUser(user: LoginUserDto): Promise<UserEntity> {
+    const errorResponse = {
+      errors: {
+        'email or password': 'is invalid',
+      },
+    };
+
     const userByEmail = await this.userRepository.findOne(
       {
         email: user.email,
@@ -57,17 +60,17 @@ export class UserService {
       { select: ['bio', 'email', 'id', 'image', 'password', 'username'] },
     );
 
+    if (!userByEmail) {
+      throw new HttpException(errorResponse, HttpStatus.UNPROCESSABLE_ENTITY);
+    }
+
     const isCorrectPassword = await compare(
       user.password,
       userByEmail.password,
     );
 
-    if (!userByEmail) {
-      throw new UnauthorizedException(USER_NOT_FOUND);
-    }
-
     if (!isCorrectPassword) {
-      throw new UnauthorizedException(INCORRECT_PASSWORD);
+      throw new HttpException(errorResponse, HttpStatus.UNPROCESSABLE_ENTITY);
     }
 
     delete userByEmail.password;

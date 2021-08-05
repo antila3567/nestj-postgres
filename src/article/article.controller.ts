@@ -13,12 +13,12 @@ import {
   Query,
   UseGuards,
   UsePipes,
-  ValidationPipe,
 } from '@nestjs/common';
 import { ArticleService } from './article.service';
 import { CreateArticleDto } from './dto/createArticle.dto';
 import { UpdateArticleDto } from './dto/updateArticle.dto';
 import { IArticleResponseInterface } from './types/articleResponse.interface';
+import { BackValidationPipe } from '@app/shared/pipes/backValidation.pipe';
 
 @Controller('articles')
 export class ArticleController {
@@ -33,7 +33,16 @@ export class ArticleController {
     return await this.articleService.findAll(userId, query);
   }
 
-  @UsePipes(new ValidationPipe())
+  @Get('feed')
+  @UseGuards(AuthGuard)
+  async getFeed(
+    @User('id') userId: number,
+    @Query() query: any,
+  ): Promise<ISortedArticleResponse> {
+    return await this.articleService.getFeed(userId, query);
+  }
+
+  @UsePipes(new BackValidationPipe())
   @Post()
   @UseGuards(AuthGuard)
   async create(
@@ -62,7 +71,7 @@ export class ArticleController {
     return await this.articleService.deleteArticle(slug, id);
   }
 
-  @UsePipes(new ValidationPipe())
+  @UsePipes(new BackValidationPipe())
   @Put(':slug')
   @UseGuards(AuthGuard)
   async updateArticle(

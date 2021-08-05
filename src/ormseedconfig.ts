@@ -2,9 +2,9 @@ import ormconfig from '@app/ormconfig';
 
 const ormseedconfig = {
   ...ormconfig,
-  migrations: [__dirname + '/seeds/**/*{.ts, .js}'],
+  migrations: ['src/seeds/*.ts'],
   cli: {
-    migrationDir: 'src/seeds',
+    migrationsDir: 'src/seeds',
   },
 };
 
